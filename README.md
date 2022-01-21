@@ -1,7 +1,17 @@
 tower-defense
 =============
 
-A fresh take on the classic tower defense game. Made in Python (graphics with Tkinter) for [15-112 Fundamentals of Programming and Computer Science](http://www.kosbie.net/cmu/fall-12/15-112/) at Carnegie Mellon University.
+Rework based on the game made by [yrkumar](https://github.com/yrkumar/tower-defense).
+
+* Update the game to Python3
+* Refactord the classes and functions
+* Changed the color-pallette
+* Added a fast-forward button
+
+Tools and Versios
+-----------
+* Python 3.9
+* Tk 8.6.10
 
 Usage
 -----
@@ -16,16 +26,11 @@ Installation
 ------------
 
 Clone the git repo into a local directory and run on the desktop
-```bash
-$ git clone git@github.com:yrkumar/tower-defense.git localDir/
-$ cd localDir/
+``` bash
+$ git clone https://github.com/nadave/tower-defense.git
+$ cd tower-defence
 $ python main.py
 ```
-
-About
------
-
-Vist [my personal webpage](http://yrkumar.github.io) to learn more.
 
 
 

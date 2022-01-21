@@ -1,12 +1,10 @@
-from animation import *
-from enemy import *
-from tower import *
-from extras import *
+from pip import main
+from animation import Animation
+from enemy import Enemy, EnemyWave
+from tower import Tower, TowerArray, TowerColor
+from extras import TowerButton
+from tkinter import PhotoImage, ALL
 import math
-
-###########################################
-# Tower Defense Game class
-###########################################
 
 class towerDefense(Animation):
 	def init(self):
@@ -20,6 +18,7 @@ class towerDefense(Animation):
 		self.startScreenHelpMode = False
 		self.pause = False
 		self.youWon = False
+		self.ffdPressed = False
 		self.clickedButton = None
 		self.towerButtons = []
 		self.slowEnemies = []
@@ -52,7 +51,7 @@ class towerDefense(Animation):
 		self.cellDim = 40
 		self.board = board
 
-	def initGameConstants(self):
+	def initGameConstants(self) -> None:
 		self.numEnemies = 10
 		self.counter = 1
 		self.lives = 5
@@ -62,48 +61,42 @@ class towerDefense(Animation):
 		self.money = 15
 		self.enemyHealth = 5
 
-	def initButtonLocations(self):
-		self.sendWaveButton = [self.boardDim+10, 
-		10, self.width-10, 70]
-		self.infoButton = [self.boardDim+210, 
-		self.sendWaveButton[3]+10, self.width-10, 
-		self.sendWaveButton[3]+140]
+	def initButtonLocations(self) -> None:
+		self.sendWaveButton    = [self.boardDim+10,  10, self.width-10, 70]
+		self.infoButton        = [self.boardDim+210, self.sendWaveButton[3]+10, self.width-10, self.sendWaveButton[3]+140]
+		self.fastForwardButton = [self.boardDim+210, self.sendWaveButton[3]+460, self.width-10, self.height-10]
 						
-	def loadImages(self):	
-		self.gameOverImage = PhotoImage(file="img/gameOver.gif")
-		self.gameOverHelpImage = PhotoImage(file="img/gameOverHelp.gif")
-		self.startImage = PhotoImage(file="img/towerDefense.gif")
-		self.startHelpImage = PhotoImage(file="img/startHelp.gif")
-		self.instructionsImage = PhotoImage(file="img/instructions.gif")
-		self.instructionsHelpImage = PhotoImage(file="img/instructionsHelp.gif")
-		self.pauseImage = PhotoImage(file="img/pauseImage.gif")
-		self.youWinImage = PhotoImage(file="img/youWin.gif")
-		self.youWinHelpImage = PhotoImage(file="img/youWinHelp.gif")
-		self.towerImage = PhotoImage(file="img/tower.gif")
+	def loadImages(self) -> None:	
+		self.gameOverImage 			= PhotoImage(file="img/gameOver.gif")
+		self.gameOverHelpImage  	= PhotoImage(file="img/gameOverHelp.gif")
+		self.instructionsImage  	= PhotoImage(file="img/instructions.gif")
+		self.startImage 			= PhotoImage(file="img/towerDefense.gif")
+		self.startHelpImage 		= PhotoImage(file="img/startHelp.gif")
+		self.instructionsHelpImage  = PhotoImage(file="img/instructionsHelp.gif")
+		self.pauseImage 			= PhotoImage(file="img/pauseImage.gif")
+		self.youWinImage 			= PhotoImage(file="img/youWin.gif")
+		self.youWinHelpImage 		= PhotoImage(file="img/youWinHelp.gif")
+		self.towerImage 			= PhotoImage(file="img/tower.gif")
 	
-	def createInitTowers(self):
-		self.orangeTower = OrangeTower(0, 0, self.board, self.cellDim)
-		self.redTower = RedTower(0, 0, self.board, self.cellDim)
-		self.greenTower = GreenTower(0, 0, self.board, self.cellDim)
-		self.purpleTower = PurpleTower(0, 0, self.board, self.cellDim) 
+	def createInitTowers(self) -> None:
+		self.orangeTower = Tower(0, 0, self.board, self.cellDim, color=TowerColor.ORANGE)
+		self.redTower 	 = Tower(0, 0, self.board, self.cellDim, color=TowerColor.RED)
+		self.greenTower  = Tower(0, 0, self.board, self.cellDim, color=TowerColor.GREEN)
+		self.purpleTower = Tower(0, 0, self.board, self.cellDim, color=TowerColor.PURPLE) 
 
-	def createTowerButtons(self):
-		orangeTowerButton = TowerButton(0, self.canvas, 
-		"Orange Tower", self.boardDim)
+	def createTowerButtons(self) -> None:
+		orangeTowerButton = TowerButton(0, self.canvas, self.boardDim, TowerColor.ORANGE)
+		redTowerButton 	  = TowerButton(1, self.canvas, self.boardDim, TowerColor.RED)
+		greenTowerButton  = TowerButton(2, self.canvas, self.boardDim, TowerColor.GREEN)
+		purpleTowerButton = TowerButton(3, self.canvas, self.boardDim, TowerColor.PURPLE)
 		self.towerButtons.append(orangeTowerButton)
-		redTowerButton = TowerButton(1, self.canvas, 
-		"Red Tower", self.boardDim)
 		self.towerButtons.append(redTowerButton)
-		greenTowerButton = TowerButton(2, self.canvas, 
-		"Green Tower", self.boardDim)
 		self.towerButtons.append(greenTowerButton)
-		purpleTowerButton = TowerButton(3, self.canvas, 
-		"Purple Tower", self.boardDim)
 		self.towerButtons.append(purpleTowerButton)
 
-	def setStartLocation(self):
-		for row in xrange(self.rows):
-			for col in xrange(self.cols):
+	def setStartLocation(self) -> None:
+		for row in range(self.rows):
+			for col in range(self.cols):
 				if self.board[row][col] == 2:
 					self.startLocation = (row, col)
 	
@@ -137,29 +130,24 @@ class towerDefense(Animation):
 				self.init()
 	
 	def mousePressed(self, event):
-		if (self.gameOver == False and self.startScreen == True and
-		self.startScreenHelpMode == False and self.youWon == False):
-			if (event.x > 50 and event.x < self.width-50 and 
-			event.y > 50 and event.y < self.height - 50):
+		if (self.gameOver == False and self.startScreen and self.startScreenHelpMode == False and self.youWon == False):
+			if (event.x > 50 and event.x < self.width-50 and event.y > 50 and event.y < self.height - 50):
 				self.startScreen = False
-		if (self.gameOver == False and 
-		self.startScreen == False and 
-		self.youWon == False):
+		if (self.gameOver == False and self.startScreen == False and self.youWon == False):
 			if self.towerButtonClicked:
 				(row, col) = self.getRowCol((event.x, event.y))
-				canBuyTower = self.checkCanBuyTower(self.clickedButton.iconColor, 
-				row, col)
-				if (self.legalTowerClick(row, col) and 
-				canBuyTower == True):
+				canBuyTower = self.checkCanBuyTower(self.clickedButton.iconColor, row, col)
+				if (self.legalTowerClick(row, col) and canBuyTower == True):
 					self.newTower(row, col, self.clickedButton.iconColor)
 					self.towerButtonClicked = False
 					self.clickedButton = None
-				elif (self.whichButton(event.x, event.y) == True and 
-				self.isEnemyWave == False):
+				elif (self.whichButton(event.x, event.y) == 'sendwave' and self.isEnemyWave == False):
 					self.newEnemyWave()
 					self.towerButtonClicked = False
-				elif (self.whichButton(event.x, event.y) != None and 
-				self.clickedButton != True):
+				elif (self.whichButton(event.x, event.y) == 'ffd'):
+					self.ffdPressed = not self.ffdPressed
+					
+				elif (self.whichButton(event.x, event.y) != None and self.clickedButton != True):
 					self.clickedButton = self.whichButton(event.x, event.y)
 					canBuyTower = self.checkCanBuyTower(self.clickedButton.iconColor)
 					if canBuyTower == True:
@@ -168,12 +156,12 @@ class towerDefense(Animation):
 						self.towerButtonClicked = False	
 			else:
 				self.clickedButton = self.whichButton(event.x, event.y)
-				if (self.clickedButton == True and 
-				self.isEnemyWave == False):
+				if (self.clickedButton == 'sendwave' and not self.isEnemyWave):
 					self.newEnemyWave()
 					self.clickedButton = None
-				elif (self.clickedButton != None and 
-				self.clickedButton != True):
+				elif (self.clickedButton == 'ffd'):
+					self.ffdPressed = not self.ffdPressed
+				elif (self.clickedButton != None and not isinstance(self.clickedButton, str)):
 					canBuyTower = self.checkCanBuyTower(self.clickedButton.iconColor)
 					if canBuyTower == True:
 						self.towerButtonClicked = True
@@ -196,14 +184,10 @@ class towerDefense(Animation):
 		for tower in self.towers.towerList:
 			if (tower.row, tower.col) == (row, col):
 				return canBuyTower
-		if towerDetails == "Orange": canBuyTower = (
-		self.money >= self.orangeTower.cost)
-		elif towerDetails == "Red": canBuyTower = (
-		self.money >= self.redTower.cost)
-		elif towerDetails == "Green": canBuyTower = (
-		self.money >= self.greenTower.cost)
-		elif towerDetails == "Purple": canBuyTower = (
-		self.money >= self.purpleTower.cost)  
+		if towerDetails   == TowerColor.ORANGE: canBuyTower = (self.money >= self.orangeTower.cost)
+		elif towerDetails == TowerColor.RED:    canBuyTower = (self.money >= self.redTower.cost)
+		elif towerDetails == TowerColor.GREEN:  canBuyTower = (self.money >= self.greenTower.cost)
+		elif towerDetails == TowerColor.PURPLE: canBuyTower = (self.money >= self.purpleTower.cost)  
 		return canBuyTower
 
 	def legalTowerClick(self, row, col):
@@ -214,39 +198,25 @@ class towerDefense(Animation):
 		return False
 		
 	def newTower(self, row, col, towerButton):
-		if towerButton == "Green":
-			tower = GreenTower(row, col, self.board, self.cellDim)
-			self.money -= tower.cost
-		elif towerButton == "Red":
-			tower = RedTower(row, col, self.board, self.cellDim)
-			self.money -= tower.cost
-		elif towerButton == "Orange":
-			tower = OrangeTower(row, col, self.board, self.cellDim)
-			self.money -= tower.cost
-		elif towerButton == "Purple":
-			tower = PurpleTower(row, col, self.board, self.cellDim)
-			self.money -= tower.cost
-		else:
-			tower = Tower(row, col, self.board, self.cellDim)
+		tower = Tower(row, col, self.board, self.cellDim, color=towerButton)
+		self.money -= tower.cost
 		self.towers.towerList.append(tower)
 
 	def whichButton(self, x, y):
 		for button in self.towerButtons:
-			if (x > button.location[0] and x < button.location[2] and 
-			y > button.location[1] and y < button.location[3]):
+			if (button.location[0] < x < button.location[2] and button.location[1] < y < button.location[3]):
 				return button
-		if (x > self.sendWaveButton[0] and x < self.sendWaveButton[2] and
-		y > self.sendWaveButton[1] and y < self.sendWaveButton[3]):
-			return True
+		if (self.sendWaveButton[0] < x < self.sendWaveButton[2] and self.sendWaveButton[1] < y < self.sendWaveButton[3]):
+			return 'sendwave'
+		if (self.fastForwardButton[0] < x < self.fastForwardButton[2] and self.fastForwardButton[1] < y < self.fastForwardButton[3]):
+			return 'ffd'
 		return None
 	
 	def newEnemyWave(self):
 		self.isEnemyWave = True
 		self.waveNum += 1
 		self.enemyHealth += 2
-		self.enemyWave = EnemyWave(self.numEnemies, self.rows, 
-		self.cols, self.cellDim, self.startLocation, 
-		self.board)
+		self.enemyWave = EnemyWave(self.numEnemies, self.rows, self.cols, self.cellDim, self.startLocation, self.board)
 		self.startWave = True
 		self.numEnemiesOnBoard = 0
 		
@@ -329,7 +299,7 @@ class towerDefense(Animation):
 		for shot in tower.shots:
 			shot.moveShot()
 			if self.shotHitEnemy(shot, enemy):
-				if isinstance(tower, RedTower):
+				if tower.color.RED:
 					enemy1 = self.findNearestEnemy(enemy)
 					if enemy1[1] < 200:
 						enemy1[0].health -= 1
@@ -430,12 +400,12 @@ class towerDefense(Animation):
 		self.drawBoard()
 
 	def drawBoard(self):
-		for row in xrange(self.rows):
-			for col in xrange(self.cols):
+		for row in range(self.rows):
+			for col in range(self.cols):
 				if self.board[row][col] == 0:
-					color = "#0F4DA8"
+					color = '#A37F6F' # Regular cell
 				elif self.board[row][col] == 1:
-					color = "#FFDC73"
+					color = "#FFDC73" # Path cell
 				elif self.board[row][col] == 2:
 					color = "green"
 				elif self.board[row][col] == 3:
@@ -445,8 +415,7 @@ class towerDefense(Animation):
 	def drawCell(self, row, col, color):
 		startx, endx = col*self.cellDim, (col+1)*self.cellDim
 		starty, endy = row*self.cellDim, 150+(row+1)*self.cellDim
-		self.canvas.create_rectangle(startx, 
-		starty, endx, endy, fill=color)
+		self.canvas.create_rectangle(startx, starty, endx, endy, fill=color)
 	
 	def drawEnemy(self):
 		for enemy in self.enemyWave.wave:
@@ -455,11 +424,8 @@ class towerDefense(Animation):
 			enemy.location[1]+self.cellDim/4, 
 			enemy.location[2]-self.cellDim/4, 
 			enemy.location[3]-self.cellDim/4)
-			self.canvas.create_oval(startx, starty, 
-			endx, endy, fill = enemy.color)
-			self.canvas.create_rectangle(startx, starty-self.cellDim/8, 
-			startx + (endx-startx) * enemy.health/self.enemyHealth, 
-			starty, fill="green")
+			self.canvas.create_oval(startx, starty, endx, endy, fill = enemy.color)
+			self.canvas.create_rectangle(startx, starty-self.cellDim/8, startx + (endx-startx) * enemy.health/self.enemyHealth, starty, fill="#7CFC00")
 
 	def drawTowers(self):
 		for tower in self.towers.towerList:
@@ -467,24 +433,20 @@ class towerDefense(Animation):
 			starty = tower.row*self.cellDim
 			endx = startx + self.cellDim
 			endy = starty + self.cellDim
-			self.canvas.create_oval(startx, starty,
-			endx, endy, fill = tower.color)
+			self.canvas.create_oval(startx, starty,	endx, endy, fill = tower.color.get_html_color())
 
-	def drawShots(self):
+	def drawShots(self) -> None:
 		for tower in self.towers.towerList:
 			for shot in tower.shots:
-				self.canvas.create_oval(shot.location[0],
-				shot.location[1], shot.location[2], 
-				shot.location[3], fill = shot.color)		
+				self.canvas.create_oval(shot.location[0], shot.location[1], shot.location[2], shot.location[3], fill = shot.color)		
 
-	def drawStatistics(self):
-		self.canvas.create_rectangle(self.boardDim, 0, 
-		self.width, self.height+10, fill ="#333333", 
-		outline="#333333")
+	def drawStatistics(self) -> None:
+		self.canvas.create_rectangle(self.boardDim, 0, self.width, self.height+10, fill ="#333333", outline="#333333")
 		self.drawTowerButtons()
 		self.drawTitle()
+		self.drawFastForward()
 	
-	def drawTowerButtons(self):
+	def drawTowerButtons(self) -> None:
 		for button in self.towerButtons:
 			if self.clickedButton == button and self.towerButtonClicked:
 				pressed=True
@@ -493,37 +455,31 @@ class towerDefense(Animation):
 			button.drawButton(pressed)
 		numTowerButtons = len(self.towerButtons)-1
 		lastButton = self.towerButtons[numTowerButtons]		
-		self.canvas.create_rectangle(self.boardDim+10, 
-		lastButton.location[3]+10, self.width-210, 
-		self.boardDim-10, outline="white")
+		self.canvas.create_rectangle(self.boardDim+10, lastButton.location[3]+10, self.width-210, self.boardDim-10, outline="white")
 			
-	def drawTowerDetails(self, button):
+	def drawTowerDetails(self, button) -> None:
 		numTowerButtons = len(self.towerButtons)-1
 		lastButton = self.towerButtons[numTowerButtons]		
 		textx = (self.boardDim + self.width-200)/2
-		self.canvas.create_text(textx, lastButton.location[3]+25, 
-		text=button.towerName.upper(), fill="white")	
-		self.canvas.create_rectangle(self.boardDim+10, 
-		self.boardDim-80, self.width-210, 
-		self.boardDim-10, outline="white")
+		self.canvas.create_text(textx, lastButton.location[3]+25, text=button.towerName.upper(), fill="white")	
+		self.canvas.create_rectangle(self.boardDim+10, self.boardDim-80, self.width-210, self.boardDim-10, outline="white")
 		self.drawTowerDesc(button)
 
 	def drawTowerDesc(self, button):
 		self.drawTowerIcon(button)
-		if button.iconColor == "Orange":
+		if button.iconColor == TowerColor.ORANGE:
 			tower = self.orangeTower
-		elif button.iconColor == "Red":
+		elif button.iconColor == TowerColor.RED:
 			tower = self.redTower
-		elif button.iconColor == "Green":
+		elif button.iconColor == TowerColor.GREEN:
 			tower = self.greenTower
-		elif button.iconColor == "Purple":
+		elif button.iconColor == TowerColor.PURPLE:
 			tower = self.purpleTower
 		self.drawTowerChars(tower)
 		textx = (self.boardDim + self.width-200)/2
 		texty = (self.height-45)
 		descText = self.getText(button)
-		self.canvas.create_text(textx, texty, 
-		text=descText, fill="white", justify="center")
+		self.canvas.create_text(textx, texty, text=descText, fill="white", justify="center")
 
 	def drawTowerIcon(self, button):
 		numTowerButtons = len(self.towerButtons)-1
@@ -532,55 +488,38 @@ class towerDefense(Animation):
 		starty = lastButton.location[3]+50
 		endx = startx + self.cellDim
 		endy = starty + self.cellDim
-		color = button.iconColor
-		self.canvas.create_oval(startx, starty, 
-		endx, endy, fill=color) 
+		self.canvas.create_oval(startx, starty, endx, endy, fill=button.iconColor.get_html_color()) 
 
 	def drawTowerChars(self, tower):	
 		numTowerButtons = len(self.towerButtons)-1
 		lastButton = self.towerButtons[numTowerButtons]		
 		textx = ((self.boardDim + self.width-200)/2) - self.cellDim-15
 		texty = lastButton.location[3]+110
-		if isinstance(tower, OrangeTower):
-			special = "Normal"
-		elif isinstance(tower, RedTower):
-			special = "Splash"
-		elif isinstance(tower, GreenTower):
-			special = "Speed"
-		elif isinstance(tower, PurpleTower):
-			special = "Slow"
-		self.canvas.create_text(textx+10, texty,
-		text=str(special), fill="white")					
-		self.canvas.create_text(textx+105, texty, 
-		text="Cost: " + str(tower.cost), fill="white")
-		self.canvas.create_text(textx+10, texty+35, 
-		text="Damage: " + str(tower.shotDamage), fill="white")
-		self.canvas.create_text(textx+105, texty+35, 
-		text="Range: " + str(tower.radius), fill="white")
+
+		self.canvas.create_text(textx+10,  texty,    text=tower.effect.name, fill="white")					
+		self.canvas.create_text(textx+105, texty,    text="Cost: " + str(tower.cost), fill="white")
+		self.canvas.create_text(textx+10,  texty+35, text="Damage: " + str(tower.shotDamage), fill="white")
+		self.canvas.create_text(textx+105, texty+35, text="Range: " + str(tower.radius), fill="white")
 		
 	def getText(self, button):
-		if button.iconColor == "Orange":
+		if button.iconColor == TowerColor.ORANGE:
 			return "The Orange Tower fires\na small shot that does\nonly minimal damage."
-		elif button.iconColor == "Red":
+		elif button.iconColor == TowerColor.RED:
 			return "The Red Tower fires\na small shot that\ndeals splash damage." 	
-		elif button.iconColor == "Green":
+		elif button.iconColor == TowerColor.GREEN:
 			return "The Green Tower fires\nfaster and damages a\nwider radius of enemies."
-		elif button.iconColor == "Purple":
+		elif button.iconColor == TowerColor.PURPLE:
 			return "The Purple Tower slows\ndown enemies around\nit at a set interval."
 		
 	def drawSendWave(self):
+		color = "#2C6700"
 		if self.isEnemyWave:
-			self.canvas.create_rectangle(self.sendWaveButton[0], 
-			self.sendWaveButton[1], self.sendWaveButton[2], 
-			self.sendWaveButton[3], fill="#587058")
-		else:
-			self.canvas.create_rectangle(self.sendWaveButton[0], 
-			self.sendWaveButton[1], self.sendWaveButton[2], 
-			self.sendWaveButton[3], fill="#2C6700")
+			color = "#587058"
+		self.canvas.create_rectangle(self.sendWaveButton[0], self.sendWaveButton[1], self.sendWaveButton[2], self.sendWaveButton[3], fill=color)
+
 		textx = (self.boardDim+self.width)/2
 		texty = 40
-		self.canvas.create_text(textx, texty, 
-		text="SEND WAVE", fill="white")
+		self.canvas.create_text(textx, texty, text="SEND WAVE", fill="white")
 		
 	def drawInfoBox(self):
 		self.drawInfoBoxOutline()
@@ -588,14 +527,11 @@ class towerDefense(Animation):
 		self.drawInfoBoxText()
 
 	def drawInfoBoxOutline(self):
-		self.canvas.create_rectangle(self.infoButton[0], 
-		self.infoButton[1], self.infoButton[2], 
-		self.infoButton[3], outline="white")
+		self.canvas.create_rectangle(self.infoButton[0], self.infoButton[1], self.infoButton[2], self.infoButton[3], outline="white")
 		
 	def drawInfoBoxTitle(self):
 		pad = 15
-		self.canvas.create_text((self.infoButton[0]+self.infoButton[2])/2, 
-		self.infoButton[1]+pad, text="INFORMATION BOX", fill="white")		 	
+		self.canvas.create_text((self.infoButton[0]+self.infoButton[2])/2, self.infoButton[1]+pad, text="INFORMATION BOX", fill="white")		 	
 		
 	def drawInfoBoxText(self):
 		pad = 15
@@ -606,12 +542,17 @@ class towerDefense(Animation):
 		self.canvas.create_text(self.infoButton[2]-55, self.infoButton[1]+pad+35,
 		text="Wave: " + str(self.waveNum) + "/" + str(self.numWaves), fill="white")
 		self.canvas.create_text(self.infoButton[2]-55, self.infoButton[1]+pad+75,
-		text="Money: " + str(self.money), fill="white")
+		text="Coins: " + str(self.money), fill="white")
 	
-	def drawTitle(self):
-		pad = 15
-		self.canvas.create_image(self.infoButton[0]+85, self.height-200,
-		image=self.towerImage)	
+	def drawTitle(self) -> None:
+		self.canvas.create_image(self.infoButton[0]+85, self.height-235, image=self.towerImage)	
+
+	def drawFastForward(self) -> None:
+		self.canvas.create_rectangle(self.fastForwardButton[0], self.fastForwardButton[1], self.fastForwardButton[2], self.fastForwardButton[3], outline="white")
+		pad = 30
+		fill = 'red' if self.ffdPressed else 'black'
+		self.delay = 10 if self.ffdPressed else 50
+		self.canvas.create_text(self.fastForwardButton[0]+87, self.fastForwardButton[1]+pad, text="FFD", fill=fill, font=("Helvetica", 24))
 
 	def drawPauseScreen(self):
 		self.canvas.create_rectangle(0, 0, self.width, self.height, fill="#003366")
@@ -622,19 +563,13 @@ class towerDefense(Animation):
 	def drawGameOver(self):
 		self.canvas.create_rectangle(0, 0, self.width, self.height, fill="#003366")
 		self.canvas.create_image(self.width/2, self.height/2-100, image=self.gameOverImage)
-		self.canvas.create_text(self.width/2, self.height/2+10, 
-		text="YOUR SCORE IS: "+str(self.score), font="Verdana 50", 
-		fill="white")
-		self.canvas.create_image(self.width/2, 
-		self.height-100, image=self.gameOverHelpImage)
+		self.canvas.create_text(self.width/2, self.height/2+10, text="YOUR SCORE IS: "+str(self.score), font="Verdana 50", fill="white")
+		self.canvas.create_image(self.width/2, self.height-100, image=self.gameOverHelpImage)
 		
 	def drawStartScreen(self):
 		self.canvas.create_rectangle(0, 0, self.width, self.height, fill="#003366")
-		self.canvas.create_image(self.width/2, self.height/2-100, 
-		image=self.startImage) 
-		self.canvas.create_image(self.width/2, self.height/2+200, 
-
-		image=self.startHelpImage)
+		self.canvas.create_image(self.width/2, self.height/2-100, image=self.startImage) 
+		self.canvas.create_image(self.width/2, self.height/2+200, image=self.startHelpImage)
 
 	def drawInstructions(self):
 		self.canvas.create_rectangle(0, 0, self.width, self.height, fill="#003366")
@@ -643,19 +578,14 @@ class towerDefense(Animation):
 		self.canvas.create_image(self.width/2, self.height-40, image=self.instructionsHelpImage)
 
 	def drawWin(self):
-		self.canvas.create_rectangle(0, 0, self.width, self.height, 
-		fill="#003366")
-		self.canvas.create_image(self.width/2, self.height/2-100, 
-		image=self.youWinImage)
-		self.canvas.create_text(self.width/2, self.height/2+10, 
-		text="YOUR SCORE IS: "+str(self.score), font="Verdana 50", 
-		fill="white")
-		self.canvas.create_image(self.width/2, 
-		self.height-100, image=self.youWinHelpImage)
+		self.canvas.create_rectangle(0, 0, self.width, self.height, fill="#003366")
+		self.canvas.create_image(self.width/2, self.height/2-100, image=self.youWinImage)
+		self.canvas.create_text(self.width/2, self.height/2+10, text="YOUR SCORE IS: "+str(self.score), font="Verdana 50", fill="white")
+		self.canvas.create_image(self.width/2, self.height-100, image=self.youWinHelpImage)
 
+def main():
+	app = towerDefense(title='Tower Defence')
+	app.run()
 
-app = towerDefense()
-app.run()
-
-
-
+if __name__ == "__main__":
+	main()

@@ -1,8 +1,7 @@
 ###########################################
 # Enemy Wave class
 ###########################################
-
-class EnemyWave(object):
+class EnemyWave():
 	def __init__(self, numEnemies, rows, cols, cellDim, startLocation, board):
 		self.wave = []
   	
@@ -11,11 +10,9 @@ class EnemyWave(object):
 # Enemy class
 ###########################################
 
-class Enemy(object):
-	def __init__(self, boardRows, boardCols, cellDim, startLocation, 
-	board, enemyHealth, color):
-		(self.rows, self.cols, self.cellDim) = (boardRows, 
-		boardCols, cellDim)
+class Enemy():
+	def __init__(self, boardRows, boardCols, cellDim, startLocation, board, enemyHealth, color):
+		(self.rows, self.cols, self.cellDim) = (boardRows, boardCols, cellDim)
 		(self.startLocation, self.board) = (startLocation, board)
 		self.location = self.calculateLocation(startLocation, cellDim)	
 		self.center = self.calculateCenter(self.location)
@@ -54,8 +51,7 @@ class Enemy(object):
 			self.counter += 1
 			if self.counter % 2 == 0:
 				self.setSpeedFactor()
-		if (row, col) == (self.startLocation[0]+1, 
-		self.startLocation[1]):
+		if (row, col) == (self.startLocation[0]+1, self.startLocation[1]):
 			pass
 		elif self.isAtTurningRTC(row, col):
 			self.moveEnemyRow(row, col)
@@ -72,8 +68,8 @@ class Enemy(object):
 		self.center = self.calculateCenter(self.location)
 		 
 	def getRowCol(self):
-		row = self.location[1]/self.cellDim
-		col = self.location[0]/self.cellDim
+		row = int(self.location[1]/self.cellDim)
+		col = int(self.location[0]/self.cellDim)
 		return (row, col)
 
 	def isAtEdge(self):
@@ -111,8 +107,7 @@ class Enemy(object):
 				elif col-1<0:
 					return self.board[row][col+1] == 1
 				else:
-					return (self.board[row][col+1] == 1 or 
-					self.board[row][col-1] == 1)
+					return (self.board[row][col+1] == 1 or self.board[row][col-1] == 1)
 		return False
 	
 	def moveEnemyRow(self, row, col):
